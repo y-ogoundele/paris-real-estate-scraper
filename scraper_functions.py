@@ -3,11 +3,11 @@ import re
 
 
 # get meta information: title, URL, nb de pieces, nb de m2 OK
-# get pricing information: rent price, taxes and fees, caution
+# get rent information: rent price, taxes and fees, caution OK
 # get price evolution if possible
-# get geo data: neighborhood, city,
+# get geo data: neighborhood, city
 # get text description: l'avis du pro, description
-# get energy diagnostic
+# get energy diagnostic if possible
 
 def list_property_urls(searchresults_soup: BeautifulSoup):
     """From a search results page, list all URLs of shown properties"""
@@ -26,7 +26,7 @@ def extract_blocks(property_soup: BeautifulSoup):
     quartier_block = main_tag.find('p', class_=re.compile("^Map__AddressLine-sc-6i077b-2"))
     price_block = main_tag.find('section', attrs={'data-test': 'price-block', 'id': "a-propos-de-ce-prix"})
     description_block = \
-    (main_tag.find_all('div', class_=re.compile('^TitledDescription__TitledDescriptionContent-sc-1r4hqf5-1')))[0]
+        (main_tag.find_all('div', class_=re.compile('^TitledDescription__TitledDescriptionContent-sc-1r4hqf5-1')))[0]
     diagnostics_block = main_tag.find_all('div', id='diagnostics')[0]
     return main_tag, summary_block, quartier_block, price_block, description_block, diagnostics_block
 
@@ -46,6 +46,29 @@ def scrape_meta_information(property_soup: BeautifulSoup, summary_block: element
     size = dimensions_block[1]
     nr_sqm = size.find_all('div')[-1].string
     return title, url, nr_sqm, nr_rooms
+
+
+def scrape_rent_information(price_block: element.Tag):
+    current_price = price_block.find_all('div',
+                                         class_=re.compile('^Pricestyled__Price-uc7t2j-0'))[0].find('div').string
+    try:
+        deposit_block = price_block.find_all('div', class_=re.compile('^rentHelper__Garantie-sc-1x3dozo-0'))[0]
+        deposit = deposit_block.strong.contents[0]
+    except IndexError:
+        deposit = 'N/A'
+    try:
+        price_fluctuations_block = price_block.find_all('div', class_=re.compile('^PriceHistorystyled__Container-sc-18jhpbr-0'))[0]
+        price_change_text = ''.join(price_fluctuations_block.find_all('div', class_=re.compile(
+            '^PriceHistorystyled__FirstEvolutionFull-sc-18jhpbr-2'))[0].contents[:3])
+        price_change_amount = (
+            price_fluctuations_block
+                .find_all('span',
+                          class_=re.compile('^PriceHistorystyled__BoldDisplayAmount-sc-18jhpbr-4'))
+        )[0].contents[0]
+        price_change_text+=price_change_amount
+    except IndexError:
+        price_change_text = 'N/A'
+    return current_price, deposit, price_change_text
 
 
 if __name__ == "__main__":

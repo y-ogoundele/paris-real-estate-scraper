@@ -2,7 +2,7 @@ import unittest
 import requests
 import re
 from bs4 import BeautifulSoup
-from scraper_functions import list_property_urls, extract_blocks, scrape_meta_information
+from scraper_functions import list_property_urls, extract_blocks, scrape_meta_information, scrape_rent_information
 
 
 class TestListPropertyURLs(unittest.TestCase):
@@ -57,3 +57,16 @@ class TestScrapeMetaInformation(unittest.TestCase):
             '1 pièce',
                            )
         self.assertEqual(meta_info, expected_result)
+
+class TestScrapeRentInformation(unittest.TestCase):
+    def setUp(self) -> None:
+        self.property_url =  "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.header = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36" ,'referer':'https://www.google.com/'}
+        response = requests.get(self.property_url, headers=self.header)
+        self.property_soup = BeautifulSoup(response.text, "html.parser")
+        main_tag = self.property_soup.find_all('div', class_=re.compile("^app__CWrapMain-aroj7e-3"))[0]
+        self.price_block = main_tag.find('section', attrs={'data-test': 'price-block', 'id': "a-propos-de-ce-prix"})
+
+    def test_returns_rent_info(self):
+        rent_info = scrape_rent_information(self.price_block)
+        self.assertEqual(len(rent_info), 3)
