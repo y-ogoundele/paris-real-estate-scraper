@@ -2,14 +2,6 @@ from bs4 import BeautifulSoup, element
 import re
 
 
-# get meta information: title, URL, nb de pieces, nb de m2 OK
-# get rent information: rent price, taxes and fees, caution OK
-# get price evolution if possible OK
-# get geo data: neighborhood, city OK
-# get text description: l'avis du pro, description OK
-# get amenities OK
-# get energy diagnostic if possible
-
 def list_property_urls(searchresults_soup: BeautifulSoup):
     """From a search results page, list all URLs of shown properties"""
     property_urls = []
@@ -18,6 +10,19 @@ def list_property_urls(searchresults_soup: BeautifulSoup):
     for result in results:
         property_urls.append(result.find_all('a', class_='CoveringLink-a3s3kt-0 dXJclF')[0].get('href'))
     return property_urls
+
+
+def scrape_property_page(property_soup: BeautifulSoup):
+    main_tag, summary_block, quartier_block, price_block, description_block, diagnostics_block = extract_blocks(
+        property_soup)
+    title, url, nr_sqm, nr_rooms = scrape_meta_information(property_soup, summary_block)
+    current_price, deposit, price_change_text = scrape_rent_information(price_block)
+    city, neighborhood = scrape_geo_information(quartier_block)
+    total_desc = scrape_description(description_block)
+    general_list, inside_list, other_list = scrape_amenities(description_block)
+    letter, cons = scrape_energy_diagnostics(diagnostics_block)
+    return [title, url, nr_sqm, nr_rooms, current_price, deposit, price_change_text, city, neighborhood, total_desc,
+            general_list, inside_list, other_list, letter, cons]
 
 
 def extract_blocks(property_soup: BeautifulSoup):
@@ -59,7 +64,7 @@ def scrape_rent_information(price_block: element.Tag):
         deposit = 'N/A'
     try:
         price_fluctuations_block = \
-        price_block.find_all('div', class_=re.compile('^PriceHistorystyled__Container-sc-18jhpbr-0'))[0]
+            price_block.find_all('div', class_=re.compile('^PriceHistorystyled__Container-sc-18jhpbr-0'))[0]
         price_change_text = ''.join(price_fluctuations_block.find_all('div', class_=re.compile(
             '^PriceHistorystyled__FirstEvolutionFull-sc-18jhpbr-2'))[0].contents[:3])
         price_change_amount = (
@@ -97,13 +102,15 @@ def scrape_amenities(description_block: element.ResultSet):
     other_list = [s.string for s in other]
     return general_list, inside_list, other_list
 
-def scrape_energy_diagnostics(diagnostics_block:element.Tag):
+
+def scrape_energy_diagnostics(diagnostics_block: element.Tag):
     try:
         [energy_diagnostic, ges_diagnostics] = diagnostics_block.find_all('div',
-                                                                          class_=re.compile('^Diagnostics__DiagnosticsContainer-al64ti-2'))
+                                                                          class_=re.compile(
+                                                                              '^Diagnostics__DiagnosticsContainer-al64ti-2'))
         letter = energy_diagnostic.find_all('div', class_=lambda x: x and 'FocusedTile' in x)[0].p.string
         cons = energy_diagnostic.find('span', class_=re.compile('^Preview__PreviewTooltipValue-sc-1pa12ii-4')).string
-        cons+=energy_diagnostic.find('span', class_=re.compile('^Preview__PreviewTooltipCaption-sc-1pa12ii-5')).string
+        cons += energy_diagnostic.find('span', class_=re.compile('^Preview__PreviewTooltipCaption-sc-1pa12ii-5')).string
     except IndexError:
         letter = 'N/A'
         cons = 'N/A'
@@ -111,6 +118,7 @@ def scrape_energy_diagnostics(diagnostics_block:element.Tag):
         letter = 'N/A'
         cons = 'N/A'
     return letter, cons
+
 
 if __name__ == "__main__":
     import requests
