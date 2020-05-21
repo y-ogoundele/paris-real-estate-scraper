@@ -4,9 +4,10 @@ import re
 
 # get meta information: title, URL, nb de pieces, nb de m2 OK
 # get rent information: rent price, taxes and fees, caution OK
-# get price evolution if possible
-# get geo data: neighborhood, city
-# get text description: l'avis du pro, description
+# get price evolution if possible OK
+# get geo data: neighborhood, city OK
+# get text description: l'avis du pro, description OK
+# get amenities OK
 # get energy diagnostic if possible
 
 def list_property_urls(searchresults_soup: BeautifulSoup):
@@ -26,7 +27,7 @@ def extract_blocks(property_soup: BeautifulSoup):
     quartier_block = main_tag.find('p', class_=re.compile("^Map__AddressLine-sc-6i077b-2"))
     price_block = main_tag.find('section', attrs={'data-test': 'price-block', 'id': "a-propos-de-ce-prix"})
     description_block = \
-        (main_tag.find_all('div', class_=re.compile('^TitledDescription__TitledDescriptionContent-sc-1r4hqf5-1')))[0]
+        (main_tag.find_all('div', class_=re.compile('^TitledDescription__TitledDescriptionContent-sc-1r4hqf5-1')))
     diagnostics_block = main_tag.find_all('div', id='diagnostics')[0]
     return main_tag, summary_block, quartier_block, price_block, description_block, diagnostics_block
 
@@ -57,7 +58,8 @@ def scrape_rent_information(price_block: element.Tag):
     except IndexError:
         deposit = 'N/A'
     try:
-        price_fluctuations_block = price_block.find_all('div', class_=re.compile('^PriceHistorystyled__Container-sc-18jhpbr-0'))[0]
+        price_fluctuations_block = \
+        price_block.find_all('div', class_=re.compile('^PriceHistorystyled__Container-sc-18jhpbr-0'))[0]
         price_change_text = ''.join(price_fluctuations_block.find_all('div', class_=re.compile(
             '^PriceHistorystyled__FirstEvolutionFull-sc-18jhpbr-2'))[0].contents[:3])
         price_change_amount = (
@@ -65,10 +67,35 @@ def scrape_rent_information(price_block: element.Tag):
                 .find_all('span',
                           class_=re.compile('^PriceHistorystyled__BoldDisplayAmount-sc-18jhpbr-4'))
         )[0].contents[0]
-        price_change_text+=price_change_amount
+        price_change_text += price_change_amount
     except IndexError:
         price_change_text = 'N/A'
     return current_price, deposit, price_change_text
+
+
+def scrape_geo_information(quartier_block: element.Tag):
+    city = ''.join(quartier_block.strong.contents[2:])
+    neighborhood = quartier_block.contents[-3]
+    return city, neighborhood
+
+
+def scrape_description(description_block: element.Tag):
+    avis_du_pro = description_block[0]
+    total_desc = ''
+    for s in avis_du_pro.find_all('p'):
+        total_desc += s.string
+    return total_desc
+
+
+def scrape_amenities(description_block: element.Tag):
+    general = description_block[-4].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all(
+        'li')
+    inside = description_block[-3].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
+    other = description_block[-2].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
+    general_list = [s.string for s in general]
+    inside_list = [s.string for s in inside]
+    other_list = [s.string for s in other]
+    return general_list, inside_list, other_list
 
 
 if __name__ == "__main__":

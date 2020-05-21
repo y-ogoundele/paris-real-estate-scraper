@@ -2,7 +2,8 @@ import unittest
 import requests
 import re
 from bs4 import BeautifulSoup
-from scraper_functions import list_property_urls, extract_blocks, scrape_meta_information, scrape_rent_information
+from scraper_functions import list_property_urls, extract_blocks, scrape_meta_information, scrape_rent_information, \
+    scrape_geo_information, scrape_amenities
 
 
 class TestListPropertyURLs(unittest.TestCase):
@@ -24,8 +25,10 @@ class TestListPropertyURLs(unittest.TestCase):
 class TestExtractBlocks(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_url = "https://www.wikipedia.org"
-        self.property_url =  "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
-        self.header = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36" ,'referer':'https://www.google.com/'}
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.header = {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+            'referer': 'https://www.google.com/'}
         response = requests.get(self.property_url, headers=self.header)
         dummy_response = requests.get(self.dummy_url, headers=self.header)
         self.property_soup = BeautifulSoup(response.text, "html.parser")
@@ -38,10 +41,13 @@ class TestExtractBlocks(unittest.TestCase):
     def test_correct_soup(self):
         self.assertEqual(len(extract_blocks(self.property_soup)), 6)
 
+
 class TestScrapeMetaInformation(unittest.TestCase):
     def setUp(self) -> None:
-        self.property_url =  "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
-        self.header = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36" ,'referer':'https://www.google.com/'}
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.header = {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+            'referer': 'https://www.google.com/'}
         response = requests.get(self.property_url, headers=self.header)
         self.property_soup = BeautifulSoup(response.text, "html.parser")
         main_tag = self.property_soup.find_all('div', class_=re.compile("^app__CWrapMain-aroj7e-3"))[0]
@@ -55,13 +61,16 @@ class TestScrapeMetaInformation(unittest.TestCase):
             'https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm',
             '19,92m²',
             '1 pièce',
-                           )
+        )
         self.assertEqual(meta_info, expected_result)
+
 
 class TestScrapeRentInformation(unittest.TestCase):
     def setUp(self) -> None:
-        self.property_url =  "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
-        self.header = {"user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36" ,'referer':'https://www.google.com/'}
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.header = {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+            'referer': 'https://www.google.com/'}
         response = requests.get(self.property_url, headers=self.header)
         self.property_soup = BeautifulSoup(response.text, "html.parser")
         main_tag = self.property_soup.find_all('div', class_=re.compile("^app__CWrapMain-aroj7e-3"))[0]
@@ -70,3 +79,36 @@ class TestScrapeRentInformation(unittest.TestCase):
     def test_returns_rent_info(self):
         rent_info = scrape_rent_information(self.price_block)
         self.assertEqual(len(rent_info), 3)
+
+
+class TestScrapeGeoInformation(unittest.TestCase):
+    def setUp(self) -> None:
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.header = {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+            'referer': 'https://www.google.com/'}
+        response = requests.get(self.property_url, headers=self.header)
+        self.property_soup = BeautifulSoup(response.text, "html.parser")
+        main_tag = self.property_soup.find_all('div', class_=re.compile("^app__CWrapMain-aroj7e-3"))[0]
+        self.quartier_block = main_tag.find('p', class_=re.compile("^Map__AddressLine-sc-6i077b-2"))
+
+    def test_returns_geo_info(self):
+        geo_info = scrape_geo_information(self.quartier_block)
+        self.assertEqual(len(geo_info), 2)
+
+
+class TestScrapeAmenities(unittest.TestCase):
+    def setUp(self) -> None:
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.header = {
+            "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
+            'referer': 'https://www.google.com/'}
+        response = requests.get(self.property_url, headers=self.header)
+        self.property_soup = BeautifulSoup(response.text, "html.parser")
+        main_tag = self.property_soup.find_all('div', class_=re.compile("^app__CWrapMain-aroj7e-3"))[0]
+        self.description_block = (
+            main_tag.find_all('div', class_=re.compile('^TitledDescription__TitledDescriptionContent-sc-1r4hqf5-1')))
+
+    def test_returns_amenities_info(self):
+        amenities = scrape_amenities(self.description_block)
+        self.assertEqual(len(amenities), 3)
