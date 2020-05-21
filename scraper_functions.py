@@ -93,13 +93,34 @@ def scrape_description(description_block: element.Tag):
 
 
 def scrape_amenities(description_block: element.ResultSet):
-    general = description_block[-4].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all(
-        'li')
-    inside = description_block[-3].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
-    other = description_block[-2].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
-    general_list = [s.string for s in general]
-    inside_list = [s.string for s in inside]
-    other_list = [s.string for s in other]
+    try:
+        if len(description_block) == 5 and 'Diagnostics' in description_block[-1].find('div').get('class')[0]:
+            general = description_block[-4].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all(
+                'li')
+            inside = description_block[-3].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
+            other = description_block[-2].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
+            general_list = [s.string for s in general]
+            inside_list = [s.string for s in inside]
+            other_list = [s.string for s in other]
+        elif len(description_block) == 4 and 'Diagnostics' in description_block[-1].find('div').get('class')[0]:
+            general = description_block[-4].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all(
+                'li')
+            inside = description_block[-3].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
+            other = description_block[-2].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
+            general_list = [s.string for s in general]
+            inside_list = [s.string for s in inside]
+            other_list = [s.string for s in other]
+        else:
+            general_list = []
+            inside_list = []
+            other_list = []
+    except IndexError: # No other field
+        general = description_block[-3].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all(
+            'li')
+        inside = description_block[-2].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
+        general_list = [s.string for s in general]
+        inside_list = [s.string for s in inside]
+        other_list = []
     return general_list, inside_list, other_list
 
 
