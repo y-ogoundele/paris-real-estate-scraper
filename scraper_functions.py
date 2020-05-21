@@ -87,7 +87,7 @@ def scrape_description(description_block: element.Tag):
     return total_desc
 
 
-def scrape_amenities(description_block: element.Tag):
+def scrape_amenities(description_block: element.ResultSet):
     general = description_block[-4].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all(
         'li')
     inside = description_block[-3].find_all('ul', class_=re.compile('^GeneralList__List-sc-9gtpjm-0'))[0].find_all('li')
@@ -97,6 +97,20 @@ def scrape_amenities(description_block: element.Tag):
     other_list = [s.string for s in other]
     return general_list, inside_list, other_list
 
+def scrape_energy_diagnostics(diagnostics_block:element.Tag):
+    try:
+        [energy_diagnostic, ges_diagnostics] = diagnostics_block.find_all('div',
+                                                                          class_=re.compile('^Diagnostics__DiagnosticsContainer-al64ti-2'))
+        letter = energy_diagnostic.find_all('div', class_=lambda x: x and 'FocusedTile' in x)[0].p.string
+        cons = energy_diagnostic.find('span', class_=re.compile('^Preview__PreviewTooltipValue-sc-1pa12ii-4')).string
+        cons+=energy_diagnostic.find('span', class_=re.compile('^Preview__PreviewTooltipCaption-sc-1pa12ii-5')).string
+    except IndexError:
+        letter = 'N/A'
+        cons = 'N/A'
+    except AttributeError:
+        letter = 'N/A'
+        cons = 'N/A'
+    return letter, cons
 
 if __name__ == "__main__":
     import requests
