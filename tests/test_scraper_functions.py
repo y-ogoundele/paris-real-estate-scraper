@@ -25,7 +25,7 @@ class TestListPropertyURLs(unittest.TestCase):
 class TestExtractBlocks(unittest.TestCase):
     def setUp(self) -> None:
         self.dummy_url = "https://www.wikipedia.org"
-        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-20eme-75/pere-lachaise-reunion/164290613.htm"
         self.header = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
             'referer': 'https://www.google.com/'}
@@ -44,37 +44,36 @@ class TestExtractBlocks(unittest.TestCase):
 
 class TestScrapeMetaInformation(unittest.TestCase):
     def setUp(self) -> None:
-        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-20eme-75/pere-lachaise-reunion/164290613.htm"
         self.header = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
             'referer': 'https://www.google.com/'}
         response = requests.get(self.property_url, headers=self.header)
         self.property_soup = BeautifulSoup(response.text, "html.parser")
         main_tag = self.property_soup.find_all('div', class_=re.compile("^app__CWrapMain-aroj7e-3"))[0]
-        self.summary_block = main_tag.find_all('div', class_=re.compile("^Summarystyled__MainWrapper-tzuaot-1"))[0]
+        self.summary_block = main_tag.find_all('div', class_=re.compile("^Summarystyled__TagsWrapper-tzuaot-19"))[0]
 
     def test_returns_meta_info(self):
         # TODO: Find a way to get a valid property (studio only)
         meta_info = scrape_meta_information(self.property_soup, self.summary_block)
         expected_result = (
-            'Location Studio Paris 5ème - Appartement F1/T1/1 pièce 19,92m² 835€/mois - SeLoger',
-            'https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm',
-            '19,92m²',
-            '1 pièce',
+            'Location Appartement 2 pièces Paris 20ème - Appartement F2/T2/2 pièces 34m² 1290€/mois - SeLoger',
+            'https://www.seloger.com/annonces/locations/appartement/paris-20eme-75/pere-lachaise-reunion/164290613.htm',
+            ['2 pièces', '1 chambre', '34m²']
         )
         self.assertEqual(meta_info, expected_result)
 
 
 class TestScrapeRentInformation(unittest.TestCase):
     def setUp(self) -> None:
-        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-20eme-75/pere-lachaise-reunion/164290613.htm"
         self.header = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
             'referer': 'https://www.google.com/'}
         response = requests.get(self.property_url, headers=self.header)
         self.property_soup = BeautifulSoup(response.text, "html.parser")
         main_tag = self.property_soup.find_all('div', class_=re.compile("^app__CWrapMain-aroj7e-3"))[0]
-        self.price_block = main_tag.find('section', attrs={'data-test': 'price-block', 'id': "a-propos-de-ce-prix"})
+        self.price_block = main_tag.find('section', attrs={'data-test': 'price-block'})
 
     def test_returns_rent_info(self):
         rent_info = scrape_rent_information(self.price_block)
@@ -83,7 +82,7 @@ class TestScrapeRentInformation(unittest.TestCase):
 
 class TestScrapeGeoInformation(unittest.TestCase):
     def setUp(self) -> None:
-        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-20eme-75/pere-lachaise-reunion/164290613.htm"
         self.header = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
             'referer': 'https://www.google.com/'}
@@ -99,7 +98,7 @@ class TestScrapeGeoInformation(unittest.TestCase):
 
 class TestScrapeAmenities(unittest.TestCase):
     def setUp(self) -> None:
-        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-20eme-75/pere-lachaise-reunion/164290613.htm"
         self.header = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
             'referer': 'https://www.google.com/'}
@@ -115,7 +114,7 @@ class TestScrapeAmenities(unittest.TestCase):
 
 class TestScrapeEnergyDiagnostics(unittest.TestCase):
     def setUp(self) -> None:
-        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-20eme-75/pere-lachaise-reunion/164290613.htm"
         self.header = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
             'referer': 'https://www.google.com/'}
@@ -130,7 +129,7 @@ class TestScrapeEnergyDiagnostics(unittest.TestCase):
 
 class TestScrapeProperty(unittest.TestCase):
     def setUp(self) -> None:
-        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-5eme-75/saint-victor/158755387.htm?projects=1&types=1&places=[{ci:750105}]&rooms=1&enterprise=0&qsVersion=1.0&bd=ListToDetail"
+        self.property_url = "https://www.seloger.com/annonces/locations/appartement/paris-20eme-75/pere-lachaise-reunion/164290613.htm"
         self.header = {
             "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.169 Safari/537.36",
             'referer': 'https://www.google.com/'}
